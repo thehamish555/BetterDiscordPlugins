@@ -986,22 +986,26 @@ const config = {
         supposedToNotify(message, channel) {
           if (message.author.id === UserStore.getCurrentUser().id) return false;
           if (channel.type === ChannelTypes["PUBLIC_THREAD"] && !channel.member) return false;
-          const suppressEveryone = MuteStore.isSuppressEveryoneEnabled(
-            message.guild_id || "@me"
-          );
-          const suppressRoles = MuteStore.isSuppressRolesEnabled(
-            message.guild_id || "@me"
-          );
+          
+          const suppressEveryone = MuteStore.isSuppressEveryoneEnabled(message.guild_id || "@me");
+          const suppressRoles = MuteStore.isSuppressRolesEnabled(message.guild_id || "@me");
+          
           if (MuteStore.allowAllMessages(channel)) return true;
-          const SomethingHereShrug = isMentioned.isRawMessageMentioned(
-            {
+          
+          if (isMentioned && typeof isMentioned.isRawMessageMentioned === 'function') {
+            return isMentioned.isRawMessageMentioned({
               rawMessage: message,
               userId: UserStore.getCurrentUser().id,
               suppressEveryone,
               suppressRoles
-            }
-          );
-          return SomethingHereShrug
+            });
+          } else {
+            const currentUserId = UserStore.getCurrentUser().id;
+            const mentionedUsers = message.mentions.map(user => user.id);
+            return mentionedUsers.includes(currentUserId) ||
+                  (!suppressEveryone && message.mention_everyone) ||
+                  (!suppressRoles && message.mention_roles.length > 0);
+          }
         }
 
         checkSettings(message, channel) {
