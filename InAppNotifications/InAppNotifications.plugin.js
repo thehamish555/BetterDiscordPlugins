@@ -3,7 +3,7 @@
  * @source https://github.com/QWERTxD/BetterDiscordPlugins/blob/main/InAppNotifications/InAppNotifications.plugin.js
  * @updateUrl https://raw.githubusercontent.com/QWERTxD/BetterDiscordPlugins/main/InAppNotifications/InAppNotifications.plugin.js
  * @website https://github.com/QWERTxD/BetterDiscordPlugins/tree/main/InAppNotifications
- * @version 1.1.6
+ * @version 1.1.5
  */
 const request = require("request");
 const fs = require("fs");
@@ -21,7 +21,7 @@ const config = {
         ],
     github_raw:
       "https://raw.githubusercontent.com/QWERTxD/BetterDiscordPlugins/main/InAppNotifications/InAppNotifications.plugin.js",
-    version: "1.1.6",
+    version: "1.1.5",
     description:
       "Displays notifications such as new messages, friends added in Discord.",
 	},
@@ -30,7 +30,7 @@ const config = {
       "title": "Discriminators",
       "type": "added",
       "items": [
-        "Modified how usernames and display names are displayed in notifications.",
+        "Fixed for new discord update",
       ]
     }
   ],
@@ -993,20 +993,17 @@ const config = {
             message.guild_id || "@me"
           );
           if (MuteStore.allowAllMessages(channel)) return true;
-          if (isMentioned && typeof isMentioned.isRawMessageMentioned === 'function') {
-            return isMentioned.isRawMessageMentioned({
-              rawMessage: message,
-              userId: UserStore.getCurrentUser().id,
-              suppressEveryone,
-              suppressRoles
-            });
-          } else {
-            const currentUserId = UserStore.getCurrentUser().id;
-            const mentionedUsers = message.mentions.map(user => user.id);
+          const currentUserId = UserStore.getCurrentUser().id;
+          const mentionedUsers = message.mentions.map(user => user.id);
+          const messageRoles =  message.mention_roles;
+          let roleMentioned = false;
+	  if (message.mention_roles) {
+	  const currentUserRoles = GuildMemberStore.getSelfMember(message.guild_id).roles;
+              roleMentioned = (currentUserRoles.some(i => messageRoles.includes(i)));
+            }
             return mentionedUsers.includes(currentUserId) ||
                   (!suppressEveryone && message.mention_everyone) ||
-                  (!suppressRoles && message.mention_roles.length > 0);
-          }
+                  (!suppressRoles && message.mention_roles.length > 0 && roleMentioned);
         }
 
         checkSettings(message, channel) {
